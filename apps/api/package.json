@@ -1,0 +1,28 @@
+{
+  "name": "@garage/api",
+  "private": true,
+  "scripts": {
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "test": "npm run build && node --test dist/uploads/uploads.service.spec.js dist/vehicles/vehicles.service.spec.js",
+    "import:ve": "node --env-file=.env scripts/import-ve.mjs",
+    "import:ve:photos": "node --env-file=.env scripts/import-photos-ve.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@prisma/client": "^6.1.0",
+    "multer": "^2.0.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/multer": "^1.4.12",
+    "prisma": "^6.1.0",
+    "typescript": "^5.7.2"
+  }
+}

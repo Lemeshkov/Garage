@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VehicleGroup {
+  IE
+  VE
+  OTHER
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+  ATV
+  OTHER
+}
+
+enum VehicleDocumentType {
+  OSAGO
+  TECHNICAL_INSPECTION
+}
+
+model Vehicle {
+  id             String           @id @default(cuid())
+  group          VehicleGroup
+  type           VehicleType
+  brand          String
+  model          String
+  year           Int?
+  licensePlate   String
+  vin            String
+  currentMileage Int?
+  description    String?
+  photoPath      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  mileageHistory MileageEntry[]
+  maintenanceRecords MaintenanceRecord[]
+  maintenanceSchedule MaintenanceSchedule?
+  documents VehicleDocument[]
+
+  @@index([group])
+  @@index([licensePlate])
+  @@index([vin])
+}
+
+model MaintenanceRecord {
+  id        String   @id @default(cuid())
+  vehicleId String
+  performedAt DateTime
+  mileage   Int?
+  description String?
+  createdAt DateTime @default(now())
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, performedAt])
+}
+
+model MaintenanceSchedule {
+  id          String   @id @default(cuid())
+  vehicleId   String   @unique
+  dueAt       DateTime?
+  dueMileage  Int?
+  warning     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model VehicleDocument {
+  id        String              @id @default(cuid())
+  vehicleId String
+  type      VehicleDocumentType
+  validUntil DateTime?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  vehicle   Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, type])
+  @@index([type, validUntil])
+}
+
+model MileageEntry {
+  id        String   @id @default(cuid())
+  vehicleId String
+  value     Int
+  comment   String?
+  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, recordedAt])
+}

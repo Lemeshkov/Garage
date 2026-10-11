@@ -1,0 +1,26 @@
+node_modules/
+.expo/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+data/uploads/
+
+# Local development files
+*.tsbuildinfo
+
+# Database backups
+*.sql.gz
+*.dump
+*.backup
+
+# Local photo collections
+img/
+IMG_*.jpg
+
+# VS Code workspace
+*.code-workspace
+
+# Uploaded vehicle photos
+apps/api/data/uploads/
