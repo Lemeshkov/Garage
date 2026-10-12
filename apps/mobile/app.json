@@ -1,1 +1,69 @@
-{ "expo": { "name": "Garage", "slug": "garage", "scheme": "garage", "orientation": "portrait", "userInterfaceStyle": "dark", "icon": "./assets/icon.png", "android": { "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#020918" } }, "plugins": ["expo-router", ["expo-image-picker", { "photosPermission": "Garage использует фотографии для карточек транспорта.", "cameraPermission": "Garage использует камеру для фотографирования транспорта." }]], "androidStatusBar": { "barStyle": "light-content", "backgroundColor": "#030d1e", "translucent": true }, "androidNavigationBar": { "barStyle": "light-content", "backgroundColor": "#030d1e" }, "experiments": { "typedRoutes": true } } }
+{
+  "expo": {
+    "name": "Garage",
+    "slug": "garage",
+    "scheme": "garage",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "ru.garage.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "ru.garage.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#020918"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Garage использует фотографии для карточек транспорта.",
+          "cameraPermission": "Garage использует камеру для фотографирования транспорта.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#020918",
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 280,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#020918",
+            "image": "./assets/splash-logo.png"
+          }
+        }
+      ]
+    ],
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#020918",
+      "translucent": true
+    },
+    "androidNavigationBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#030d1e"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5bcd63cd-c910-4e46-89f3-ce24305ac97a"
+      }
+    },
+    "owner": "evlem"
+  }
+}

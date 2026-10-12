@@ -6,15 +6,17 @@
     "build": "nest build",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
-    "test": "npm run build && node --test dist/uploads/uploads.service.spec.js dist/vehicles/vehicles.service.spec.js",
+    "test": "npm run build && node --test dist/uploads/uploads.service.spec.js dist/vehicles/vehicles.service.spec.js dist/service-records/service-records.service.spec.js dist/auth/admin-session.guard.spec.js dist/auth/auth.service.spec.js",
     "import:ve": "node --env-file=.env scripts/import-ve.mjs",
-    "import:ve:photos": "node --env-file=.env scripts/import-photos-ve.mjs"
+    "import:ve:photos": "node --env-file=.env scripts/import-photos-ve.mjs",
+    "admin:create": "node --env-file=.env scripts/create-admin.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.1.0",
+    "argon2": "^0.45.1",
     "multer": "^2.0.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

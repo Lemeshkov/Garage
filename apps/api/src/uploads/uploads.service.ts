@@ -20,7 +20,8 @@ export class UploadsService {
     return `vehicles/${fileName}`;
   }
 
-  async remove(relativePath: string | null | undefined): Promise<void> {
+  /** Compensation only: use exclusively for a newly written file whose DB transaction failed. */
+  async discardUncommitted(relativePath: string | null | undefined): Promise<void> {
     if (!relativePath || !relativePath.startsWith('vehicles/')) return;
     const target = resolve(this.directory, relativePath);
     if (!target.startsWith(this.directory)) return;

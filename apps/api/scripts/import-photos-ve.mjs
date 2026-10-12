@@ -11,7 +11,7 @@ const dryRun = process.argv.includes('--dry-run');
 const apply = process.argv.includes('--apply');
 const replaceExisting = process.argv.includes('--replace-existing');
 if (dryRun === apply) throw new Error('Укажите ровно один режим: --dry-run или --apply.');
-if (apply && !process.env.LOCAL_DEV_WRITE?.match(/^true$/i)) throw new Error('Для --apply необходим LOCAL_DEV_WRITE=true.');
+if (apply && !args.includes('--confirm-apply')) throw new Error('Для --apply необходим явный флаг --confirm-apply.');
 const database = new URL(process.env.DATABASE_URL).pathname.slice(1);
 if (database !== 'garage_db') throw new Error(`Скрипт разрешён только для garage_db; получено: ${database || '(пусто)'}`);
 
@@ -59,7 +59,12 @@ try {
     console.log(`${label} | ${item.matches[0]} | ${item.vehicle.vin} | ${item.vehicle.photoPath ?? 'нет'} | ${action}`);
     if (!apply || !['загрузить', 'заменить существующее'].includes(action)) continue;
     const newPath = await uploads.saveVehiclePhoto({ buffer: content, size: content.length });
-    try { await prisma.vehicle.update({ where: { id: item.vehicle.id }, data: { photoPath: newPath } }); await uploads.remove(item.vehicle.photoPath); } catch (error) { await uploads.remove(newPath); throw error; }
+    try {
+      await prisma.$transaction(async tx => {
+        const updated = await tx.vehicle.update({ where: { id: item.vehicle.id }, data: { photoPath: newPath } });
+        await tx.auditLog.create({ data: { vehicleId: item.vehicle.id, entityType: 'Vehicle', entityId: item.vehicle.id, action: 'UPDATE', oldValues: { photoPath: item.vehicle.photoPath }, newValues: { photoPath: updated.photoPath }, correctionReason: 'Импорт фотографии транспорта' } });
+      });
+    } catch (error) { await uploads.discardUncommitted(newPath); throw error; }
   }
   const candidates = new Set(plan.flatMap(item => item.matches));
   for (const file of files.filter(file => !candidates.has(file))) console.log(`Без сопоставления: ${file}`);

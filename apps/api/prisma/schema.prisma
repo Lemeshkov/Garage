@@ -25,74 +25,421 @@ enum VehicleDocumentType {
   TECHNICAL_INSPECTION
 }
 
+enum VehicleStatus {
+  ACTIVE
+  STORED
+  SOLD
+  WRITTEN_OFF
+}
+
+enum TireSeason {
+  SUMMER
+  WINTER
+  ALL_SEASON
+}
+
+enum TireSetStatus {
+  INSTALLED
+  STORED
+  REMOVED
+  SOLD
+  RETIRED
+}
+
+enum TireChangeAction {
+  INSTALLED
+  REMOVED
+}
+
+enum VehiclePartStatus {
+  PURCHASED
+  IN_STOCK
+  INSTALLED
+  REMOVED
+  RETURNED
+  RETIRED
+}
+
+enum BatteryStatus {
+  IN_STOCK
+  INSTALLED
+  REMOVED
+  RETIRED
+}
+
+enum MaintenanceStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  INACTIVE
+}
+
+enum DetailingStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+  INACTIVE
+}
+
+enum DocumentStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  CANCELLED
+}
+
+enum OperationEventType {
+  CREATED
+  INSTALLED
+  REMOVED
+  SEASONAL_CHANGE
+  STORED
+  SOLD
+  RETIRED
+  RETURNED
+  WORK_COMPLETED
+  STATUS_CHANGED
+  MILEAGE_RECORDED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  STATUS_CHANGE
+  MARK_ERRONEOUS
+}
+
+enum AdminRole {
+  ADMIN
+}
+
 model Vehicle {
-  id             String           @id @default(cuid())
-  group          VehicleGroup
-  type           VehicleType
-  brand          String
-  model          String
-  year           Int?
-  licensePlate   String
-  vin            String
-  currentMileage Int?
-  description    String?
-  photoPath      String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  mileageHistory MileageEntry[]
-  maintenanceRecords MaintenanceRecord[]
+  id                  String               @id @default(cuid())
+  group               VehicleGroup
+  type                VehicleType
+  brand               String
+  model               String
+  year                Int?
+  licensePlate        String
+  vin                 String
+  currentMileage      Int?
+  description         String?
+  photoPath           String?
+  status              VehicleStatus        @default(ACTIVE)
+  statusChangedAt     DateTime             @default(now())
+  statusReason        String?
+  statusComment       String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  mileageHistory      MileageEntry[]
+  maintenanceRecords  MaintenanceRecord[]
   maintenanceSchedule MaintenanceSchedule?
-  documents VehicleDocument[]
+  documents           VehicleDocument[]
+  tireSets            TireSet[]
+  tireChanges         TireChangeHistory[]
+  batteries           VehicleBattery[]
+  detailingRecords    DetailingRecord[]
+  parts               VehiclePart[]
+  operationEvents     OperationEvent[]
+  auditLogs           AuditLog[]
 
   @@index([group])
   @@index([licensePlate])
   @@index([vin])
 }
 
+model TireSet {
+  id               String              @id @default(cuid())
+  vehicleId        String
+  season           TireSeason
+  brand            String
+  model            String
+  tireSize         String
+  quantity         Int
+  purchaseDate     DateTime?
+  purchasePrice    Decimal?            @db.Decimal(12, 2)
+  installedAt      DateTime?
+  installedMileage Int?
+  storageLocation  String?
+  status           TireSetStatus
+  statusChangedAt  DateTime            @default(now())
+  statusReason     String?
+  statusComment    String?
+  isErroneous      Boolean             @default(false)
+  erroneousAt      DateTime?
+  erroneousReason  String?
+  notes            String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  vehicle          Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  changes          TireChangeHistory[]
+
+  @@index([vehicleId, status])
+}
+
+model TireChangeHistory {
+  id              String           @id @default(cuid())
+  vehicleId       String
+  tireSetId       String
+  action          TireChangeAction
+  changedAt       DateTime
+  mileage         Int?
+  notes           String?
+  isErroneous     Boolean          @default(false)
+  erroneousAt     DateTime?
+  erroneousReason String?
+  createdAt       DateTime         @default(now())
+  vehicle         Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  tireSet         TireSet          @relation(fields: [tireSetId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, changedAt])
+  @@index([tireSetId, changedAt])
+}
+
+model VehicleBattery {
+  id                String        @id @default(cuid())
+  vehicleId         String
+  brand             String
+  model             String
+  capacityAh        Int?
+  purchaseDate      DateTime?
+  installedAt       DateTime?
+  installedMileage  Int?
+  price             Decimal?      @db.Decimal(12, 2)
+  warrantyUntil     DateTime?
+  removedAt         DateTime?
+  replacementReason String?
+  notes             String?
+  status            BatteryStatus @default(IN_STOCK)
+  statusChangedAt   DateTime      @default(now())
+  statusReason      String?
+  statusComment     String?
+  isErroneous       Boolean       @default(false)
+  erroneousAt       DateTime?
+  erroneousReason   String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  vehicle           Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, installedAt])
+}
+
+model DetailingRecord {
+  id                   String          @id @default(cuid())
+  vehicleId            String
+  serviceType          String
+  performedAt          DateTime
+  provider             String?
+  cost                 Decimal?        @db.Decimal(12, 2)
+  description          String?
+  protectionValidUntil DateTime?
+  status               DetailingStatus @default(COMPLETED)
+  statusChangedAt      DateTime        @default(now())
+  statusReason         String?
+  statusComment        String?
+  isErroneous          Boolean         @default(false)
+  erroneousAt          DateTime?
+  erroneousReason      String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  vehicle              Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, performedAt])
+}
+
+model VehiclePart {
+  id               String            @id @default(cuid())
+  vehicleId        String
+  name             String
+  partNumber       String?
+  manufacturer     String?
+  quantity         Int
+  unitPrice        Decimal?          @db.Decimal(12, 2)
+  purchasedAt      DateTime?
+  supplier         String?
+  installedAt      DateTime?
+  installedMileage Int?
+  status           VehiclePartStatus
+  statusChangedAt  DateTime          @default(now())
+  statusReason     String?
+  statusComment    String?
+  isErroneous      Boolean           @default(false)
+  erroneousAt      DateTime?
+  erroneousReason  String?
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  vehicle          Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, status])
+  @@index([vehicleId, installedAt])
+}
+
 model MaintenanceRecord {
-  id        String   @id @default(cuid())
-  vehicleId String
-  performedAt DateTime
-  mileage   Int?
-  description String?
-  createdAt DateTime @default(now())
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  vehicleId       String
+  performedAt     DateTime
+  mileage         Int?
+  description     String?
+  status          MaintenanceStatus @default(COMPLETED)
+  statusChangedAt DateTime          @default(now())
+  statusReason    String?
+  statusComment   String?
+  isErroneous     Boolean           @default(false)
+  erroneousAt     DateTime?
+  erroneousReason String?
+  createdAt       DateTime          @default(now())
+  vehicle         Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
   @@index([vehicleId, performedAt])
 }
 
 model MaintenanceSchedule {
-  id          String   @id @default(cuid())
-  vehicleId   String   @unique
-  dueAt       DateTime?
-  dueMileage  Int?
-  warning     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  vehicleId       String         @unique
+  dueAt           DateTime?
+  dueMileage      Int?
+  warning         String?
+  status          ScheduleStatus @default(ACTIVE)
+  statusChangedAt DateTime       @default(now())
+  statusReason    String?
+  statusComment   String?
+  isErroneous     Boolean        @default(false)
+  erroneousAt     DateTime?
+  erroneousReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  vehicle         Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 }
 
 model VehicleDocument {
-  id        String              @id @default(cuid())
-  vehicleId String
-  type      VehicleDocumentType
-  validUntil DateTime?
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  vehicle   Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id              String              @id @default(cuid())
+  vehicleId       String
+  type            VehicleDocumentType
+  validUntil      DateTime?
+  status          DocumentStatus      @default(ACTIVE)
+  statusChangedAt DateTime            @default(now())
+  statusReason    String?
+  statusComment   String?
+  isErroneous     Boolean             @default(false)
+  erroneousAt     DateTime?
+  erroneousReason String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  vehicle         Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
   @@unique([vehicleId, type])
   @@index([type, validUntil])
 }
 
 model MileageEntry {
-  id        String   @id @default(cuid())
-  vehicleId String
-  value     Int
-  comment   String?
-  recordedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  vehicleId       String
+  value           Int
+  comment         String?
+  recordedAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  isErroneous     Boolean   @default(false)
+  erroneousAt     DateTime?
+  erroneousReason String?
+  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
   @@index([vehicleId, recordedAt])
+}
+
+model OperationEvent {
+  id                 String             @id @default(cuid())
+  vehicleId          String
+  type               OperationEventType
+  sourceEntity       String
+  sourceId           String
+  occurredAt         DateTime
+  description        String
+  mileage            Int?
+  initiatedBy        String?
+  initiatedByAdminId String?
+  reason             String?
+  comment            String?
+  isErroneous        Boolean            @default(false)
+  erroneousAt        DateTime?
+  erroneousReason    String?
+  createdAt          DateTime           @default(now())
+  vehicle            Vehicle            @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  initiatedByAdmin   AdminUser?         @relation(fields: [initiatedByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, occurredAt])
+  @@index([sourceEntity, sourceId])
+  @@index([type])
+  @@index([initiatedByAdminId])
+}
+
+model AuditLog {
+  id               String      @id @default(cuid())
+  vehicleId        String?
+  entityType       String
+  entityId         String
+  action           AuditAction
+  oldValues        Json?
+  newValues        Json?
+  changedAt        DateTime    @default(now())
+  changedBy        String?
+  adminUserId      String?
+  correctionReason String?
+  vehicle          Vehicle?    @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  adminUser        AdminUser?  @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  @@index([vehicleId, changedAt])
+  @@index([entityType, entityId])
+  @@index([adminUserId, changedAt])
+}
+
+model AdminUser {
+  id                  String           @id @default(cuid())
+  login               String           @unique
+  displayName         String
+  passwordHash        String
+  role                AdminRole        @default(ADMIN)
+  mustChangePassword  Boolean          @default(true)
+  failedLoginAttempts Int              @default(0)
+  lockedUntil         DateTime?
+  isActive            Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  sessions            AdminSession[]
+  auditLogs           AuditLog[]
+  operationEvents     OperationEvent[]
+
+  @@index([isActive])
+}
+
+model AdminSession {
+  id          String    @id @default(cuid())
+  adminUserId String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastUsedAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  userAgent   String?
+  ipAddress   String?
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  @@index([adminUserId, revokedAt, expiresAt])
+}
+
+model AdminLoginAttempt {
+  id          String   @id @default(cuid())
+  login       String
+  ipAddress   String?
+  succeeded   Boolean
+  attemptedAt DateTime @default(now())
+
+  @@index([login, attemptedAt])
+  @@index([ipAddress, attemptedAt])
 }
