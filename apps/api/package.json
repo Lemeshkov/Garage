@@ -9,7 +9,8 @@
     "test": "npm run build && node --test dist/uploads/uploads.service.spec.js dist/vehicles/vehicles.service.spec.js dist/service-records/service-records.service.spec.js dist/auth/admin-session.guard.spec.js dist/auth/auth.service.spec.js",
     "import:ve": "node --env-file=.env scripts/import-ve.mjs",
     "import:ve:photos": "node --env-file=.env scripts/import-photos-ve.mjs",
-    "admin:create": "node --env-file=.env scripts/create-admin.mjs"
+    "admin:create": "node --env-file=.env scripts/create-admin.mjs",
+    "admin:create:developer": "node --env-file=.env scripts/create-admin.mjs --login developer --name Разработчик"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

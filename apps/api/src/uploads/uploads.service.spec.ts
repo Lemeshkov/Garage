@@ -19,3 +19,10 @@ test('rejects a file without a supported image signature', async () => {
   const service = new UploadsService();
   await assert.rejects(() => service.saveVehiclePhoto(file(Buffer.from('not an image'))));
 });
+
+test('accepts a real PDF signature for an OSAGO attachment', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'garage-document-'));
+  const service = new UploadsService();
+  Object.defineProperty(service, 'directory', { value: directory });
+  try { const path = await service.saveVehicleDocument(file(Buffer.from('%PDF-1.7\nGarage'))); assert.match(path, /^documents\/[a-f0-9-]+\.pdf$/); } finally { await rm(directory, { recursive: true, force: true }); }
+});

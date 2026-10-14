@@ -63,3 +63,43 @@ test('field correction writes audit but not an operation event', async () => {
   await service.updatePart('vehicle-1', 'part-1', { name: 'Масляный фильтр' });
   assert.equal(audits, 1);
 });
+
+test('rejects an OSAGO policy whose end date precedes its start date', async () => {
+  const prisma = { vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) } } as unknown as PrismaService;
+  const service = new ServiceRecordsService(prisma);
+  await assert.rejects(() => service.createOsago('vehicle-1', { insurer: 'Страховая', policyNumber: '123', validFrom: '2026-10-10', validUntil: '2026-10-09' }), BadRequestException);
+});
+
+test('creates maintenance with separate audit and operation event records', async () => {
+  let audits = 0; let events = 0;
+  const tx = {
+    maintenanceRecord: { create: async (args: { data: Record<string, unknown> }) => ({ id: 'maintenance-1', ...args.data }) },
+    auditLog: { create: async () => { audits++; } },
+    operationEvent: { create: async () => { events++; } },
+  };
+  const prisma = { vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) }, $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx) } as unknown as PrismaService;
+  const service = new ServiceRecordsService(prisma);
+  await service.createMaintenance('vehicle-1', { serviceType: 'Замена масла', performedAt: '2026-10-10', mileage: 15000 });
+  assert.equal(audits, 1); assert.equal(events, 1);
+});
+
+test('requires either a date or mileage for the next maintenance schedule', async () => {
+  const prisma = { vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) }, maintenanceSchedule: { findUnique: async () => null } } as unknown as PrismaService;
+  const service = new ServiceRecordsService(prisma);
+  await assert.rejects(() => service.createMaintenanceSchedule('vehicle-1', {}), BadRequestException);
+});
+
+test('emits and prioritizes overdue and approaching OSAGO/maintenance warnings', async () => {
+  const vehicle = { id: 'vehicle-1', brand: 'BMW', model: 'X7', licensePlate: 'A001AA', currentMileage: 19_500 };
+  const inDays = (days: number) => new Date(Date.now() + days * 86_400_000);
+  const prisma = {
+    vehicleDocument: { findMany: async () => [{ id: 'policy', validUntil: inDays(14), vehicle }] },
+    maintenanceSchedule: { findMany: async () => [{ id: 'schedule', dueAt: null, dueMileage: 19_000, mileageWarningThreshold: 1000, vehicle }] },
+    vehicleBattery: { findMany: async () => [] }, detailingRecord: { findMany: async () => [] },
+  } as unknown as PrismaService;
+  const result = await new ServiceRecordsService(prisma).warnings();
+  assert.equal(result.length, 2);
+  assert.equal(result[0].severity, 'OVERDUE');
+  assert.equal(result[0].kind, 'MAINTENANCE');
+  assert.equal(result[1].kind, 'OSAGO');
+});

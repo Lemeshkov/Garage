@@ -28,3 +28,9 @@ Monorepo для закрытого приложения учёта личног�
 $env:EXPO_OFFLINE="1"
 
 npm run mobile -- --clear
+
+Проверка работоспособности
+Get-Service Cloudflared
+Invoke-RestMethod https://api.garage-app.ru/api/health
+
+Invoke-RestMethod http://localhost:3000/api/health

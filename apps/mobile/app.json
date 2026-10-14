@@ -7,6 +7,13 @@
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5bcd63cd-c910-4e46-89f3-ce24305ac97a",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "bundleIdentifier": "ru.garage.app",
       "supportsTablet": true,

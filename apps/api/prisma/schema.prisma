@@ -287,6 +287,11 @@ model MaintenanceRecord {
   performedAt     DateTime
   mileage         Int?
   description     String?
+  serviceType     String?
+  replacedItems   String?
+  cost            Decimal?          @db.Decimal(12, 2)
+  provider        String?
+  comment         String?
   status          MaintenanceStatus @default(COMPLETED)
   statusChangedAt DateTime          @default(now())
   statusReason    String?
@@ -295,27 +300,29 @@ model MaintenanceRecord {
   erroneousAt     DateTime?
   erroneousReason String?
   createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   vehicle         Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
   @@index([vehicleId, performedAt])
 }
 
 model MaintenanceSchedule {
-  id              String         @id @default(cuid())
-  vehicleId       String         @unique
-  dueAt           DateTime?
-  dueMileage      Int?
-  warning         String?
-  status          ScheduleStatus @default(ACTIVE)
-  statusChangedAt DateTime       @default(now())
-  statusReason    String?
-  statusComment   String?
-  isErroneous     Boolean        @default(false)
-  erroneousAt     DateTime?
-  erroneousReason String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  vehicle         Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  id                      String         @id @default(cuid())
+  vehicleId               String         @unique
+  dueAt                   DateTime?
+  dueMileage              Int?
+  warning                 String?
+  mileageWarningThreshold Int            @default(1000)
+  status                  ScheduleStatus @default(ACTIVE)
+  statusChangedAt         DateTime       @default(now())
+  statusReason            String?
+  statusComment           String?
+  isErroneous             Boolean        @default(false)
+  erroneousAt             DateTime?
+  erroneousReason         String?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  vehicle                 Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 }
 
 model VehicleDocument {
@@ -323,6 +330,12 @@ model VehicleDocument {
   vehicleId       String
   type            VehicleDocumentType
   validUntil      DateTime?
+  insurer         String?
+  policyNumber    String?
+  validFrom       DateTime?
+  cost            Decimal?            @db.Decimal(12, 2)
+  comment         String?
+  attachmentPath  String?
   status          DocumentStatus      @default(ACTIVE)
   statusChangedAt DateTime            @default(now())
   statusReason    String?
@@ -334,7 +347,7 @@ model VehicleDocument {
   updatedAt       DateTime            @updatedAt
   vehicle         Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
-  @@unique([vehicleId, type])
+  @@index([vehicleId, type])
   @@index([type, validUntil])
 }
 

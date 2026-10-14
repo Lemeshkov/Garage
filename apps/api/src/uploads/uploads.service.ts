@@ -4,6 +4,7 @@ import { mkdir, unlink, writeFile } from 'fs/promises';
 import { join, resolve } from 'path';
 
 const maxSize = 5 * 1024 * 1024;
+const maxDocumentSize = 10 * 1024 * 1024;
 type DetectedImage = { extension: 'jpg' | 'png' | 'webp'; mimeType: string };
 
 @Injectable()
@@ -20,9 +21,20 @@ export class UploadsService {
     return `vehicles/${fileName}`;
   }
 
+  async saveVehicleDocument(file: Express.Multer.File): Promise<string> {
+    if (!file?.buffer?.length) throw new BadRequestException('Файл документа не получен.');
+    if (file.size > maxDocumentSize) throw new BadRequestException('Размер документа не должен превышать 10 МБ.');
+    const isPdf = file.buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+    const extension = isPdf ? 'pdf' : this.detectImage(file.buffer).extension;
+    await mkdir(join(this.directory, 'documents'), { recursive: true });
+    const fileName = `${randomUUID()}.${extension}`;
+    try { await writeFile(join(this.directory, 'documents', fileName), file.buffer, { flag: 'wx' }); } catch { throw new InternalServerErrorException('Не удалось сохранить документ.'); }
+    return `documents/${fileName}`;
+  }
+
   /** Compensation only: use exclusively for a newly written file whose DB transaction failed. */
   async discardUncommitted(relativePath: string | null | undefined): Promise<void> {
-    if (!relativePath || !relativePath.startsWith('vehicles/')) return;
+    if (!relativePath || (!relativePath.startsWith('vehicles/') && !relativePath.startsWith('documents/'))) return;
     const target = resolve(this.directory, relativePath);
     if (!target.startsWith(this.directory)) return;
     await unlink(target).catch(() => undefined);
