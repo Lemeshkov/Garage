@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AdminWriteGuard } from '../auth/admin-session.guard';
@@ -18,12 +19,11 @@ export class ServiceRecordsController {
   @Post('osago') @UseGuards(AdminWriteGuard) createOsago(@Param('vehicleId') v: string, @Body() b: OsagoInput) { return this.records.createOsago(v, b); }
   @Patch('osago/:id') @UseGuards(AdminWriteGuard) updateOsago(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: Partial<OsagoInput>) { return this.records.updateOsago(v, id, b); }
   @Post('osago/:id/attachment') @UseGuards(AdminWriteGuard) @UseInterceptors(FileInterceptor('document', { storage: memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1 } })) uploadOsago(@Param('vehicleId') v: string, @Param('id') id: string, @UploadedFile() file: Express.Multer.File) { return this.records.attachOsago(v, id, file); }
-  @Post('osago/:id/mark-erroneous') @UseGuards(AdminWriteGuard) erroneousOsago(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: MarkErroneousInput) { return this.records.markOsagoErroneous(v, id, b); }
 
   @Get('maintenance') listMaintenance(@Param('vehicleId') v: string) { return this.records.listMaintenance(v); }
   @Post('maintenance') @UseGuards(AdminWriteGuard) createMaintenance(@Param('vehicleId') v: string, @Body() b: MaintenanceInput) { return this.records.createMaintenance(v, b); }
   @Patch('maintenance/:id') @UseGuards(AdminWriteGuard) updateMaintenance(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: Partial<MaintenanceInput>) { return this.records.updateMaintenance(v, id, b); }
-  @Get('maintenance-schedule') schedule(@Param('vehicleId') v: string) { return this.records.getMaintenanceSchedule(v); }
+  @Get('maintenance-schedule') async schedule(@Param('vehicleId') v: string, @Res() response: Response) { response.json(await this.records.getMaintenanceSchedule(v)); }
   @Post('maintenance-schedule') @UseGuards(AdminWriteGuard) createSchedule(@Param('vehicleId') v: string, @Body() b: MaintenanceScheduleInput) { return this.records.createMaintenanceSchedule(v, b); }
   @Patch('maintenance-schedule/:id') @UseGuards(AdminWriteGuard) updateSchedule(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: Partial<MaintenanceScheduleInput>) { return this.records.updateMaintenanceSchedule(v, id, b); }
   @Post('tires') @UseGuards(AdminWriteGuard) createTire(@Param('vehicleId') v: string, @Body() b: TireSetInput) { return this.records.createTire(v, b); }

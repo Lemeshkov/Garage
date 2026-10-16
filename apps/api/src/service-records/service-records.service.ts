@@ -32,7 +32,7 @@ export class ServiceRecordsService {
   private eventDescription(kind: Kind, status: string, record: AnyInput) { const name = kind === 'detailing' ? record.serviceType : kind === 'parts' ? record.name : `${record.brand ?? ''} ${record.model ?? ''}`.trim(); return `${name}: статус изменён на ${status}`; }
 
   private daysUntil(value: Date, now = new Date()) { return Math.ceil((value.getTime() - now.getTime()) / 86400000); }
-  private osagoView<T extends { validUntil: Date | null }>(record: T) { const daysRemaining = record.validUntil ? this.daysUntil(record.validUntil) : null; return { ...record, daysRemaining, calculatedStatus: daysRemaining === null ? 'ACTIVE' : daysRemaining < 0 ? 'EXPIRED' : daysRemaining <= 30 ? 'EXPIRING_SOON' : 'ACTIVE' }; }
+  private osagoView<T extends { validUntil: Date | null; isErroneous?: boolean; erroneousAt?: Date | null; erroneousReason?: string | null }>(record: T) { const { isErroneous: _ignored, erroneousAt: _ignoredAt, erroneousReason: _ignoredReason, ...document } = record; const daysRemaining = record.validUntil ? this.daysUntil(record.validUntil) : null; return { ...document, daysRemaining, calculatedStatus: daysRemaining === null ? 'ACTIVE' : daysRemaining < 0 ? 'EXPIRED' : daysRemaining <= 30 ? 'EXPIRING_SOON' : 'ACTIVE' }; }
 
   async listOsago(vehicleId: string) { await this.vehicleState(vehicleId); const records = await this.prisma.vehicleDocument.findMany({ where: { vehicleId, type: 'OSAGO' }, orderBy: [{ validFrom: 'desc' }, { createdAt: 'desc' }] }); return records.map(record => this.osagoView(record)); }
   async createOsago(vehicleId: string, input: OsagoInput) { await this.ensureOperational(vehicleId); const data = this.osagoData(input as AnyInput); return this.prisma.$transaction(async tx => { const record = await tx.vehicleDocument.create({ data: { vehicleId, type: 'OSAGO', status: 'ACTIVE', ...data } }); await tx.auditLog.create({ data: { ...this.actor.auditFields(), vehicleId, entityType: 'VehicleDocument', entityId: record.id, action: 'CREATE', newValues: this.json(record) } }); await tx.operationEvent.create({ data: { ...this.actor.eventFields(), vehicleId, type: 'CREATED', sourceEntity: 'VehicleDocument', sourceId: record.id, occurredAt: record.validFrom ?? record.createdAt, description: `ОСАГО ${record.policyNumber ?? ''}`.trim() } }); return this.osagoView(record); }); }
@@ -48,7 +48,7 @@ export class ServiceRecordsService {
 
   async warnings() {
     const [osago, schedules, batteries, detailing] = await Promise.all([
-      this.prisma.vehicleDocument.findMany({ where: { type: 'OSAGO', isErroneous: false, status: { in: ['ACTIVE','EXPIRED'] }, vehicle: { status: { in: ['ACTIVE','STORED'] } } }, include: { vehicle: true } }),
+      this.prisma.vehicleDocument.findMany({ where: { type: 'OSAGO', status: { in: ['ACTIVE','EXPIRED'] }, vehicle: { status: { in: ['ACTIVE','STORED'] } } }, include: { vehicle: true } }),
       this.prisma.maintenanceSchedule.findMany({ where: { isErroneous: false, status: 'ACTIVE', vehicle: { status: { in: ['ACTIVE','STORED'] } } }, include: { vehicle: true } }),
       this.prisma.vehicleBattery.findMany({ where: { isErroneous: false, warrantyUntil: { not: null }, status: { in: ['IN_STOCK','INSTALLED'] }, vehicle: { status: { in: ['ACTIVE','STORED'] } } }, include: { vehicle: true } }),
       this.prisma.detailingRecord.findMany({ where: { isErroneous: false, protectionValidUntil: { not: null }, status: 'COMPLETED', vehicle: { status: { in: ['ACTIVE','STORED'] } } }, include: { vehicle: true } }),
@@ -149,22 +149,17 @@ export class ServiceRecordsService {
   }
   async markExistingErroneous(kind: 'maintenance' | 'schedule' | 'documents', vehicleId: string, id: string, input: MarkErroneousInput) {
     const reason = this.required(input.reason, 'причина ошибочной записи'); const delegates = { maintenance: this.prisma.maintenanceRecord, schedule: this.prisma.maintenanceSchedule, documents: this.prisma.vehicleDocument }; const entities = { maintenance: 'MaintenanceRecord', schedule: 'MaintenanceSchedule', documents: 'VehicleDocument' };
-    const old = await (delegates[kind] as any).findFirst({ where: { id, vehicleId } }) as AnyInput | null; if (!old) throw new NotFoundException('Запись не найдена у выбранного транспортного средства.'); if (old.isErroneous) throw new BadRequestException('Запись уже помечена ошибочной.'); const now = new Date();
+    const old = await (delegates[kind] as any).findFirst({ where: { id, vehicleId } }) as AnyInput | null; if (!old) throw new NotFoundException('Запись не найдена у выбранного транспортного средства.'); if (kind === 'documents' && old.type === 'OSAGO') throw new BadRequestException('Для ОСАГО механизм ошибочных записей отключён.'); if (old.isErroneous) throw new BadRequestException('Запись уже помечена ошибочной.'); const now = new Date();
     return this.prisma.$transaction(async tx => { const txDelegates = { maintenance: tx.maintenanceRecord, schedule: tx.maintenanceSchedule, documents: tx.vehicleDocument }; const record = await (txDelegates[kind] as any).update({ where: { id }, data: { isErroneous: true, erroneousAt: now, erroneousReason: reason } }); await tx.operationEvent.updateMany({ where: { vehicleId, sourceEntity: entities[kind], sourceId: id }, data: { isErroneous: true, erroneousAt: now, erroneousReason: reason } }); await tx.auditLog.create({ data: { ...this.actor.auditFields(), vehicleId, entityType: entities[kind], entityId: id, action: 'MARK_ERRONEOUS', oldValues: this.json(old), newValues: this.json(record), changedAt: now, correctionReason: reason } }); return record; });
-  }
-  async markOsagoErroneous(vehicleId: string, id: string, input: MarkErroneousInput) {
-    const record = await this.prisma.vehicleDocument.findFirst({ where: { id, vehicleId, type: 'OSAGO' }, select: { id: true } });
-    if (!record) throw new NotFoundException('Полис ОСАГО не найден.');
-    return this.markExistingErroneous('documents', vehicleId, id, input);
   }
   private osagoData(input: AnyInput) {
     const validFrom = this.date(input.validFrom, 'дата начала действия', true)!;
-    const validUntil = this.date(input.validUntil, 'дата окончания действия', true)!;
-    if (validUntil < validFrom) throw new BadRequestException('Дата окончания полиса не может быть раньше даты начала.');
-    return { insurer: this.required(input.insurer, 'страховая компания'), policyNumber: this.required(input.policyNumber, 'номер полиса'), validFrom, validUntil, cost: this.money(input.cost, 'стоимость полиса'), comment: this.text(input.comment) };
+    const validUntil = this.date(input.validUntil, 'дата окончания действия');
+    if (validUntil && validUntil < validFrom) throw new BadRequestException('Дата окончания полиса не может быть раньше даты начала.');
+    return { insurer: this.text(input.insurer), policyNumber: this.text(input.policyNumber), validFrom, validUntil, cost: this.money(input.cost, 'стоимость полиса'), comment: this.text(input.comment) };
   }
   private maintenanceData(input: AnyInput) {
-    return { serviceType: this.required(input.serviceType, 'вид обслуживания'), performedAt: this.date(input.performedAt, 'дата обслуживания', true)!, mileage: this.integer(input.mileage, 'пробег', 0, true)!, description: this.text(input.description), replacedItems: this.text(input.replacedItems), cost: this.money(input.cost, 'стоимость обслуживания'), provider: this.text(input.provider), comment: this.text(input.comment) };
+    return { serviceType: this.text(input.serviceType), performedAt: this.date(input.performedAt, 'дата обслуживания', true)!, mileage: this.integer(input.mileage, 'пробег'), description: this.text(input.description), replacedItems: this.text(input.replacedItems), cost: this.money(input.cost, 'стоимость обслуживания'), provider: this.text(input.provider), comment: this.text(input.comment) };
   }
   private scheduleData(input: AnyInput) {
     const dueAt = this.date(input.dueAt, 'дата следующего ТО');

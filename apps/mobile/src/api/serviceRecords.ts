@@ -8,12 +8,15 @@ export type GlobalEvent = { id: string; vehicle: { id: string; name: string; lic
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await apiFetch(path, init);
+  const text = await response.text();
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { message?: string | string[] } | null;
+    let body: { message?: string | string[] } | null = null;
+    try { body = text ? JSON.parse(text) as { message?: string | string[] } : null; } catch { /* Use the readable HTTP fallback below. */ }
     const message = Array.isArray(body?.message) ? body.message.join('\n') : body?.message;
-    throw new Error(message ?? `Ошибка сервера (${response.status})`);
+    throw new Error(message ?? (text && !text.trimStart().startsWith('<') ? text.slice(0, 200) : `Сервер вернул ошибку ${response.status}. Повторите попытку позже.`));
   }
-  return response.json() as Promise<T>;
+  if (!text.trim()) return null as T;
+  try { return JSON.parse(text) as T; } catch { throw new Error('Сервер вернул некорректный ответ. Проверьте подключение к API.'); }
 }
 
 export const getServiceRecords = (vehicleId: string, kind: RecordKind) => request<ServiceRecord[]>(`/vehicles/${vehicleId}/${kind}`);

@@ -26,11 +26,11 @@ export type StatusChangeInput = { status: string; occurredAt?: string; mileage?:
 export type SeasonalTireChangeInput = StatusChangeInput & { outgoingTireSetId: string };
 export type MarkErroneousInput = { reason: string; initiatedBy?: string | null };
 export type OsagoInput = {
-  insurer: string; policyNumber: string; validFrom: string; validUntil: string;
+  insurer?: string | null; policyNumber?: string | null; validFrom: string; validUntil?: string | null;
   cost?: string | number | null; comment?: string | null; correctionReason?: string | null;
 };
 export type MaintenanceInput = {
-  performedAt: string; mileage?: number | null; serviceType: string; description?: string | null;
+  performedAt: string; mileage?: number | null; serviceType?: string | null; description?: string | null;
   replacedItems?: string | null; cost?: string | number | null; provider?: string | null;
   comment?: string | null; correctionReason?: string | null;
 };

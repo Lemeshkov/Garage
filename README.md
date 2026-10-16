@@ -34,3 +34,8 @@ Get-Service Cloudflared
 Invoke-RestMethod https://api.garage-app.ru/api/health
 
 Invoke-RestMethod http://localhost:3000/api/health
+
+публикация обновлений
+cd C:\Users\1111111\Garage\apps\mobile
+
+npx eas-cli update --channel preview --environment preview --message "Исправление подключения Garage к серверу"
