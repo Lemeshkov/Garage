@@ -1,0 +1,21 @@
+{
+  "name": "@garage/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js"
+  },
+  "dependencies": {
+    "@garage/contracts": "*"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

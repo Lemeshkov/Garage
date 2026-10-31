@@ -1,0 +1,12 @@
+.wrap { margin-top: 28px; }
+.wrap h2 { margin: 0 0 12px; color: #fff; font-size: 19px; font-weight: 800; }
+.tabs { display: flex; gap: 7px; padding-bottom: 12px; overflow-x: auto; scrollbar-width: thin; }
+.tabs button { flex: 0 0 auto; padding: 9px 13px; border: 1px solid rgba(132,193,255,.16); border-radius: 12px; color: #91adcd; background: rgba(16,49,88,.52); font-size: 12px; font-weight: 700; cursor: pointer; }
+.tabs button:hover { color: #dcecff; border-color: rgba(132,193,255,.32); }
+.tabs .active { color: #fff; background: rgba(42,112,236,.76); }
+.tabs button:focus-visible { outline: 2px solid #8fc6ff; outline-offset: 2px; }
+.records { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.record { min-height: 78px; padding: 14px; }
+.record strong { color: #eef7ff; font-size: 14px; font-weight: 800; }
+.record p { margin: 5px 0 0; color: #91adca; font-size: 11px; line-height: 17px; }
+@media(max-width:700px){.records{grid-template-columns:1fr}}

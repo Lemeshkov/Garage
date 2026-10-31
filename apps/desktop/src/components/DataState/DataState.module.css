@@ -1,0 +1,7 @@
+.state { min-height: 132px; padding: 25px; display: grid; place-items: center; align-content: center; text-align: center; }
+.state p { margin: 8px 0 0; color: #9db6d3; font-size: 13px; line-height: 19px; }
+.state strong { color: var(--garage-danger); font-size: 14px; }
+.state i { color: #69aaff; font-size: 28px; font-style: normal; }
+.state button { margin-top: 15px; border: 0; color: #7eb8ff; background: none; font-size: 13px; font-weight: 800; cursor: pointer; }
+.spinner { width: 25px; height: 25px; border: 2px solid rgba(126,184,255,.22); border-top-color: var(--garage-blue); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

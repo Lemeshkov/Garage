@@ -1,0 +1,13 @@
+.page { max-width: 1160px; margin: 0 auto; }
+.page h1 { margin: 12px 0 17px; color: var(--garage-text); font-size: 29px; font-weight: 800; }
+.mode { display: flex; padding: 4px; margin-bottom: 17px; border: 1px solid rgba(117,184,255,.16); border-radius: 15px; background: rgba(6,28,58,.56); }
+.mode button { flex: 1; padding: 9px 12px; border: 0; border-radius: 11px; color: #90aaca; background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; }
+.mode .active { color: #fff; background: rgba(42,112,236,.76); }
+.search { height: 50px; padding: 0 14px; margin-bottom: 12px; display: flex; align-items: center; border: 1px solid rgba(132,193,255,.2); border-radius: 15px; background: rgba(16,49,88,.44); }
+.search span { margin-right: 9px; color: #aacbf0; font-size: 25px; }
+.search input { width: 100%; border: 0; outline: 0; color: var(--garage-text); background: transparent; font-size: 14px; }
+.search input::placeholder { color: #7896b8; }
+.count { margin: 0 0 13px; color: #93aecc; font-size: 12px; }
+.grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; }
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.grid{grid-template-columns:1fr}}

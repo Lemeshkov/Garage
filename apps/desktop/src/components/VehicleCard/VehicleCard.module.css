@@ -1,0 +1,11 @@
+.button { width: 100%; min-width: 0; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.button:focus-visible { outline: 2px solid #7eb8ff; outline-offset: 4px; border-radius: 22px; }
+.card { position: relative; height: 192px; transition: opacity .16s, transform .16s, border-color .16s; }
+.button:hover .card { transform: translateY(-2px); border-color: rgba(151,211,255,.45); }
+.button:active .card { opacity: .9; transform: scale(.985); }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3,13,30,0), rgba(3,13,30,.98)); }
+.copy { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; flex-direction: column; align-items: flex-start; }
+.copy strong { color: #fff; font-size: 17px; font-weight: 800; }
+.copy > span:not(.kind) { margin: 4px 0 9px; color: #d0e3fb; font-size: 11px; }
+.kind { position: absolute; right: 0; bottom: 4px; color: rgba(208,227,251,.72); font-size: 10px; }

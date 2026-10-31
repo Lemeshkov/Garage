@@ -1,0 +1,15 @@
+:root {
+  color-scheme: dark;
+  --garage-background: #030d1e;
+  --garage-background-deep: #020918;
+  --garage-panel: rgba(12, 39, 74, 0.54);
+  --garage-border: rgba(142, 205, 255, 0.24);
+  --garage-text: #f2f7ff;
+  --garage-muted: #91acce;
+  --garage-blue: #4d9cff;
+  --garage-success: #5be0a1;
+  --garage-warning: #ffc15a;
+  --garage-danger: #ff8291;
+  --garage-radius-card: 20px;
+  --garage-shadow: 0 8px 30px rgba(25, 119, 229, 0.15);
+}

@@ -1,0 +1,4 @@
+.row { display: flex; align-items: center; justify-content: space-between; margin: 25px 0 12px; }
+.row h2 { margin: 0; color: var(--garage-text); font-size: 18px; font-weight: 800; }
+.row button { border: 0; padding: 6px; color: #7eb8ff; background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
+.row button:hover { color: #b5d8ff; }

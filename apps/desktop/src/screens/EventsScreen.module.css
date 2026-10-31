@@ -1,0 +1,9 @@
+.page { max-width: 900px; margin: 0 auto; }
+.page h1 { margin: 12px 0 17px; color: var(--garage-text); font-size: 29px; font-weight: 800; }
+.list { display: grid; gap: 10px; }
+.list button { padding: 0; border: 0; color: inherit; background: none; text-align: left; cursor: pointer; }
+.card { padding: 14px; transition: transform .16s,border-color .16s; }
+.list button:hover .card { transform: translateY(-2px); border-color: rgba(151,211,255,.45); }
+.card span { display: block; color: #85c1ff; font-size: 10px; font-weight: 900; letter-spacing: 1.4px; }
+.card strong { display: block; margin-top: 7px; color: #edf6ff; font-size: 14px; font-weight: 800; }
+.card p { margin: 8px 0 0; color: #9db6d3; font-size: 13px; }

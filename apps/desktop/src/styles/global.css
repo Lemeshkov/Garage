@@ -1,0 +1,14 @@
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body {
+  min-height: 100vh;
+  color: var(--garage-text);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(28, 110, 255, 0.13), transparent 32rem),
+    linear-gradient(180deg, #020918 0%, #061b36 48%, #031022 100%);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+::selection { color: #fff; background: rgba(77,156,255,.55); }

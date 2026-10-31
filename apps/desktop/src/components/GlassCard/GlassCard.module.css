@@ -1,0 +1,9 @@
+.card {
+  overflow: hidden;
+  border: 1px solid var(--garage-border);
+  border-radius: var(--garage-radius-card);
+  background: var(--garage-panel);
+  box-shadow: var(--garage-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

@@ -1,0 +1,14 @@
+.page { max-width: 1160px; margin: 0 auto; padding-bottom: 40px; }
+.back { width: 42px; height: 42px; margin-bottom: 14px; display: grid; place-items: center; border: 1px solid rgba(150,211,255,.23); border-radius: 50%; color: #fff; background: rgba(28,75,129,.48); font-size: 35px; line-height: 37px; cursor: pointer; }
+.back:hover { background: rgba(42,112,236,.6); }
+.heroGrid { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(340px,.7fr); gap: 24px; align-items: start; }
+.hero { width: 100%; height: min(54vh,520px); min-height: 300px; border-radius: 25px; object-fit: cover; }
+.summary>span { color: #85c1ff; font-size: 10px; font-weight: 900; letter-spacing: 1.4px; }
+.summary h1 { margin: 7px 0 0; color: #fff; font-size: 28px; font-weight: 900; }
+.summary>p { margin: 5px 0 0; color: #95b1d1; font-size: 11px; overflow-wrap: anywhere; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+.metrics>div { padding: 11px; border-radius: 15px; }
+.metrics small { display: block; color: #8faaca; font-size: 10px; }
+.metrics strong { display: block; margin-top: 7px; color: #edf6ff; font-size: 12px; font-weight: 800; }
+@media(max-width:850px){.heroGrid{grid-template-columns:1fr}.hero{height:330px}.summary{max-width:none}}
+@media(max-width:520px){.hero{height:245px;min-height:245px}.summary h1{font-size:25px}.metrics{grid-template-columns:1fr 1fr}}

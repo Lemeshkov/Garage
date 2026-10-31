@@ -1,0 +1,9 @@
+import { useMemo,useState } from 'react';
+import type { Vehicle,VehicleGroup } from '@garage/contracts';
+import { DataState } from '../components/DataState/DataState';
+import { GroupSwitch } from '../components/GroupSwitch/GroupSwitch';
+import { VehicleCard } from '../components/VehicleCard/VehicleCard';
+import styles from './GarageScreen.module.css';
+
+type Props={vehicles:Vehicle[];loading:boolean;error:string|null;reload:()=>Promise<void>;group:VehicleGroup;onGroup:(group:VehicleGroup)=>void;archive:boolean;onArchive:(value:boolean)=>void;onOpen:(id:string)=>void};
+export function GarageScreen({vehicles,loading,error,reload,group,onGroup,archive,onArchive,onOpen}:Props){const [query,setQuery]=useState('');const list=useMemo(()=>vehicles.filter(v=>v.group===group&&(archive?['SOLD','WRITTEN_OFF'].includes(v.status):!['SOLD','WRITTEN_OFF'].includes(v.status))&&`${v.brand} ${v.model}`.toLowerCase().includes(query.toLowerCase())),[vehicles,group,archive,query]);return <div className={styles.page}><h1>{archive?'Архив':'Гараж'}</h1><GroupSwitch value={group} onChange={onGroup}/><div className={styles.mode}><button type="button" className={!archive?styles.active:''} onClick={()=>onArchive(false)}>В эксплуатации</button><button type="button" className={archive?styles.active:''} onClick={()=>onArchive(true)}>Архив</button></div><label className={styles.search}><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск транспорта" aria-label="Поиск транспорта"/></label><p className={styles.count}>{list.length} ед. транспорта</p><DataState loading={loading} error={error} empty={!list.length} emptyText={archive?'Архив пуст':'Транспорт не найден'} retry={()=>void reload()}><div className={styles.grid}>{list.map(v=><VehicleCard key={v.id} vehicle={v} onOpen={()=>onOpen(v.id)}/>)}</div></DataState></div>}

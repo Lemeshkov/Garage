@@ -1,0 +1,5 @@
+.card { padding: 17px; margin-top: 16px; }
+.card h3 { margin: 0 0 4px; color: var(--garage-text); font-size: 16px; font-weight: 800; }
+.row { min-height: 47px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid rgba(147,204,255,.18); color: #cbdcf0; font-size: 13px; }
+.row:last-child { border-bottom: 0; }
+.row strong { color: #7eb8ff; font-size: 12px; font-weight: 700; text-align: right; }
