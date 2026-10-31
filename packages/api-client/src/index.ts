@@ -131,7 +131,9 @@ export class GarageApi {
         const message = Array.isArray(body?.message) ? body.message.join('\n') : body?.message;
         throw new GarageApiError(message ?? `Сервер вернул ошибку ${response.status}.`, response.status, body);
       }
-      return (text ? JSON.parse(text) : null) as T;
+      if (!text) return null as T;
+      try { return JSON.parse(text) as T; }
+      catch { throw new GarageApiError('Сервер вернул некорректный ответ.', response.status); }
     } catch (error) {
       if (error instanceof GarageApiError) throw error;
       if (error instanceof Error && error.name === 'AbortError') throw new GarageApiError('Не удалось подключиться к серверу.', 0);

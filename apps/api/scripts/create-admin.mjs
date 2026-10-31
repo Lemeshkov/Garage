@@ -22,8 +22,8 @@ try {
   const password = await hidden('Первоначальный пароль: '); const confirmation = await hidden('Повторите пароль: ');
   if (!password || password !== confirmation) throw new Error('Пароли не совпадают.');
   const passwordHash = await hash(password, { type: argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 });
-  await prisma.adminUser.create({ data: { login, displayName, passwordHash, mustChangePassword: true } });
-  console.log(`Администратор ${login} создан. При первом входе потребуется сменить пароль.`);
+  await prisma.adminUser.create({ data: { login, displayName, passwordHash, mustChangePassword: false } });
+  console.log(`Администратор ${login} создан.`);
 } catch (error) { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; }
 finally { await prisma.$disconnect(); }
 

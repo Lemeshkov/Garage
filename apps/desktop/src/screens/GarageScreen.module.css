@@ -1,5 +1,6 @@
 .page { max-width: 1160px; margin: 0 auto; }
 .page h1 { margin: 12px 0 17px; color: var(--garage-text); font-size: 29px; font-weight: 800; }
+.titleRow{display:flex;align-items:center;justify-content:space-between;gap:18px}.add{padding:10px 14px;border:1px solid rgba(126,188,255,.28);border-radius:12px;color:#fff;background:rgba(38,113,232,.7);font-weight:800;cursor:pointer}
 .mode { display: flex; padding: 4px; margin-bottom: 17px; border: 1px solid rgba(117,184,255,.16); border-radius: 15px; background: rgba(6,28,58,.56); }
 .mode button { flex: 1; padding: 9px 12px; border: 0; border-radius: 11px; color: #90aaca; background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; }
 .mode .active { color: #fff; background: rgba(42,112,236,.76); }

@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthenticatedRequest } from './auth.types';
 import { AdminActorContext } from './admin-actor.context';
@@ -12,6 +12,5 @@ export class AdminSessionGuard implements CanActivate {
 @Injectable()
 export class AdminWriteGuard extends AdminSessionGuard {
   constructor(auth: AuthService, actor: AdminActorContext) { super(auth, actor); }
-  async canActivate(context: ExecutionContext) { await super.canActivate(context); const request = context.switchToHttp().getRequest<AuthenticatedRequest>(); if (request.admin?.mustChangePassword) throw new ForbiddenException('Перед изменением данных необходимо сменить первоначальный пароль.'); return true; }
 }
 

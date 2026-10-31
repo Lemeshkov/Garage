@@ -7,8 +7,7 @@ import { AdminPrincipal } from './auth.types';
 const maxAttempts = 5;
 const attemptWindowMs = 15 * 60 * 1000;
 const sessionDurationMs = 12 * 60 * 60 * 1000;
-const configuredPasswordLength = Number(process.env.AUTH_MIN_PASSWORD_LENGTH ?? (process.env.NODE_ENV === 'production' ? 10 : 4));
-const minimumPasswordLength = Number.isInteger(configuredPasswordLength) && configuredPasswordLength >= 4 ? configuredPasswordLength : 10;
+const minimumPasswordLength = 4;
 
 @Injectable()
 export class AuthService {
