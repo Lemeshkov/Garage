@@ -44,9 +44,7 @@ export class ServiceRecordsController {
   @Post('parts/:id/status') @UseGuards(AdminWriteGuard) partStatus(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: StatusChangeInput) { return this.records.changeStatus('parts', v, id, b); }
   @Post('parts/:id/mark-erroneous') @UseGuards(AdminWriteGuard) erroneousPart(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: MarkErroneousInput) { return this.records.markErroneous('parts', v, id, b); }
   @Post('maintenance/:id/status') @UseGuards(AdminWriteGuard) maintenanceStatus(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: StatusChangeInput) { return this.records.changeExistingStatus('maintenance', v, id, b); }
-  @Post('maintenance/:id/mark-erroneous') @UseGuards(AdminWriteGuard) erroneousMaintenance(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: MarkErroneousInput) { return this.records.markExistingErroneous('maintenance', v, id, b); }
   @Post('maintenance-schedule/:id/status') @UseGuards(AdminWriteGuard) scheduleStatus(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: StatusChangeInput) { return this.records.changeExistingStatus('schedule', v, id, b); }
-  @Post('maintenance-schedule/:id/mark-erroneous') @UseGuards(AdminWriteGuard) erroneousSchedule(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: MarkErroneousInput) { return this.records.markExistingErroneous('schedule', v, id, b); }
   @Post('documents/:id/status') @UseGuards(AdminWriteGuard) documentStatus(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: StatusChangeInput) { return this.records.changeExistingStatus('documents', v, id, b); }
   @Post('documents/:id/mark-erroneous') @UseGuards(AdminWriteGuard) erroneousDocument(@Param('vehicleId') v: string, @Param('id') id: string, @Body() b: MarkErroneousInput) { return this.records.markExistingErroneous('documents', v, id, b); }
 }

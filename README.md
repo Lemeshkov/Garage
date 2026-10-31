@@ -29,13 +29,23 @@ $env:EXPO_OFFLINE="1"
 
 npm run mobile -- --clear
 
-Проверка работоспособности
+######Проверка работоспособности#######
 Get-Service Cloudflared
 Invoke-RestMethod https://api.garage-app.ru/api/health
 
 Invoke-RestMethod http://localhost:3000/api/health
 
-публикация обновлений
+# список данных
+
+(Invoke-RestMethod https://api.garage-app.ru/api/vehicles).Count
+
+# скорость ответа апи
+
+Measure-Command {
+Invoke-RestMethod https://api.garage-app.ru/api/vehicles | Out-Null
+}
+
+########публикация обновлений########
 cd C:\Users\1111111\Garage\apps\mobile
 
 npx eas-cli update --channel preview --environment preview --message "Исправление подключения Garage к серверу"

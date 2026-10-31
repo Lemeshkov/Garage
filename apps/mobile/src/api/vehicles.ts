@@ -1,5 +1,6 @@
 import type { Fleet, Vehicle } from '../data/garage';
 import { apiBaseUrl, apiFetch } from '../auth/session';
+import { RequestTimeoutError, isAbortError, retryAsync } from './network';
 
 export type VehicleInput = { group: Fleet; type: Vehicle['type']; brand: string; model: string; year: string; licensePlate: string; vin: string; currentMileage: string; description: string };
 type ApiVehicle = { id: string; group: Fleet; type: Vehicle['type']; brand: string; model: string; year: number | null; licensePlate: string; vin: string; currentMileage: number | null; description: string | null; photoPath: string | null; status: Vehicle['lifecycleStatus'] };
@@ -9,9 +10,25 @@ const typeLabel: Record<Vehicle['type'], string> = { CAR: 'Автомобиль'
 const typeImage: Record<Vehicle['type'], string> = { CAR: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=85', MOTORCYCLE: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1200&q=85', ATV: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1200&q=85', OTHER: 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1200&q=85' };
 const lifecycleLabel: Record<Vehicle['lifecycleStatus'], Vehicle['status']> = { ACTIVE: 'В норме', STORED: 'На хранении', SOLD: 'Продан', WRITTEN_OFF: 'Списан' };
 function mapVehicle(v: ApiVehicle): Vehicle { const photoUrl = v.photoPath ? uploadsUrl + v.photoPath : null; const lifecycleStatus = v.status ?? 'ACTIVE'; return { id: v.id, group: v.group, type: v.type, name: `${v.brand} ${v.model}`, plate: v.licensePlate, mileage: v.currentMileage === null ? 'Не указан' : `${v.currentMileage.toLocaleString('ru-RU')} км`, kind: typeLabel[v.type], status: lifecycleLabel[lifecycleStatus], lifecycleStatus, vin: v.vin, year: v.year, description: v.description, photoUrl, image: photoUrl ?? typeImage[v.type] }; }
-async function request<T>(path: string, init?: RequestInit): Promise<T> { const response = await apiFetch(path, init); if (!response.ok) { const body = await response.json().catch(() => null) as { message?: string } | null; throw new Error(body?.message ?? `Ошибка сервера (${response.status})`); } return response.json() as Promise<T>; }
-export async function getVehicles(group?: Fleet): Promise<Vehicle[]> { return (await request<ApiVehicle[]>(`/vehicles${group ? `?group=${group}` : ''}`)).map(mapVehicle); }
-export async function getVehicle(id: string): Promise<Vehicle> { return mapVehicle(await request<ApiVehicle>(`/vehicles/${id}`)); }
+class VehicleApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+async function request<T>(path: string, init?: RequestInit, publicRead = false): Promise<T> { const response = await apiFetch(path, init, { requiresAuth: !publicRead }); if (!response.ok) { const body = await response.json().catch(() => null) as { message?: string } | null; throw new VehicleApiError(body?.message ?? `Ошибка сервера (${response.status})`, response.status); } return response.json() as Promise<T>; }
+function isTransientVehicleError(error: unknown) { return error instanceof RequestTimeoutError || (error instanceof VehicleApiError && error.status >= 500) || (error instanceof TypeError && !isAbortError(error)); }
+export async function getVehicles(group?: Fleet, signal?: AbortSignal): Promise<Vehicle[]> {
+  try {
+    const result = await retryAsync(
+      () => request<ApiVehicle[]>(`/vehicles${group ? `?group=${group}` : ''}`, { signal }, true),
+      { retries: 1, delayMs: 800, shouldRetry: isTransientVehicleError, signal },
+    );
+    return result.map(mapVehicle);
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    if (error instanceof VehicleApiError && error.status < 500) throw error;
+    throw new Error('Не удалось подключиться к серверу.');
+  }
+}
+export async function getVehicle(id: string): Promise<Vehicle> { return mapVehicle(await request<ApiVehicle>(`/vehicles/${id}`, undefined, true)); }
 function payload(input: VehicleInput) { return { ...input, year: input.year.trim() ? Number(input.year) : null, currentMileage: input.currentMileage.trim() ? Number(input.currentMileage) : null, description: input.description || undefined }; }
 export async function createVehicle(input: VehicleInput): Promise<Vehicle> { return mapVehicle(await request<ApiVehicle>('/vehicles', { method: 'POST', body: JSON.stringify(payload(input)) })); }
 export async function updateVehicle(id: string, input: VehicleInput): Promise<Vehicle> { return mapVehicle(await request<ApiVehicle>(`/vehicles/${id}`, { method: 'PATCH', body: JSON.stringify(payload(input)) })); }

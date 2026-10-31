@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { fetchWithTimeout } from '../api/network';
 
 const key = 'garage.admin.session';
 let cached: string | null | undefined;
@@ -11,9 +12,43 @@ export function apiUrl(path: string) {
   if (!__DEV__ && process.env.EXPO_PUBLIC_APP_VARIANT !== 'preview' && !apiBaseUrl.startsWith('https://')) throw new Error('Рабочая сборка требует HTTPS-адрес API.');
   return `${apiBaseUrl}${path}`;
 }
-export async function getToken() { if (cached === undefined) cached = await SecureStore.getItemAsync(key); return cached; }
+export async function getToken() {
+  if (cached !== undefined) return cached;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    cached = await Promise.race([
+      SecureStore.getItemAsync(key),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('SecureStore timeout')), 3_000); }),
+    ]);
+    return cached;
+  } catch {
+    // A temporary native-storage failure must not clear or overwrite a valid session.
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 export async function saveToken(token: string) { cached = token; await SecureStore.setItemAsync(key, token); }
 export async function clearToken() { cached = null; await SecureStore.deleteItemAsync(key); }
 export function onUnauthorized(handler: () => void) { unauthorizedHandler = handler; return () => { if (unauthorizedHandler === handler) unauthorizedHandler = undefined; }; }
-export async function apiFetch(path: string, init?: RequestInit) { const token = await getToken(); const response = await fetch(apiUrl(path), { ...init, headers: { ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(init?.headers ?? {}) } }); if (response.status === 401 || response.status === 403) { await clearToken(); unauthorizedHandler?.(); } return response; }
+type ApiFetchOptions = { requiresAuth?: boolean; timeoutMs?: number };
+
+export async function apiFetch(path: string, init?: RequestInit, options: ApiFetchOptions = {}) {
+  // Public reads must not wait for SecureStore: a delayed native storage call must
+  // never prevent the garage list from loading for a guest.
+  const token = options.requiresAuth === false ? null : await getToken();
+  const response = await fetchWithTimeout(apiUrl(path), {
+    ...init,
+    headers: {
+      ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+  }, options.timeoutMs);
+  if (options.requiresAuth !== false && (response.status === 401 || response.status === 403)) {
+    await clearToken();
+    unauthorizedHandler?.();
+  }
+  return response;
+}
 

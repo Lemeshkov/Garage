@@ -134,8 +134,36 @@ test('creates maintenance with only the performed date', async () => {
     auditLog: { create: async () => undefined }, operationEvent: { create: async () => undefined },
   };
   const prisma = { vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) }, $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx) } as unknown as PrismaService;
-  await new ServiceRecordsService(prisma).createMaintenance('vehicle-1', { performedAt: '2026-10-16' });
-  assert.equal(saved?.mileage, null); assert.equal(saved?.serviceType, null); assert.equal(saved?.cost, null);
+  const result = await new ServiceRecordsService(prisma).createMaintenance('vehicle-1', { performedAt: '2026-10-16' });
+  assert.equal(saved?.mileage, null); assert.equal(saved?.serviceType, null); assert.equal(saved?.cost, null); assert.equal('isErroneous' in result, false);
+});
+
+test('lists historically erroneous maintenance as a regular history entry', async () => {
+  const prisma = {
+    vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) },
+    maintenanceRecord: { findMany: async () => [{ id: 'maintenance-1', performedAt: new Date('2026-10-01'), isErroneous: true, erroneousReason: 'Старая пометка' }] },
+  } as unknown as PrismaService;
+  const records = await new ServiceRecordsService(prisma).listMaintenance('vehicle-1');
+  assert.equal(records.length, 1); assert.equal('isErroneous' in records[0], false); assert.equal('erroneousReason' in records[0], false);
+});
+
+test('edits historically erroneous maintenance and keeps an audit entry', async () => {
+  let audited = false;
+  const old = { id: 'maintenance-1', vehicleId: 'vehicle-1', performedAt: new Date('2026-10-01'), mileage: null, serviceType: null, description: null, replacedItems: null, cost: null, provider: null, comment: null, isErroneous: true };
+  const tx = { maintenanceRecord: { update: async (args: { data: object }) => ({ ...old, ...args.data }) }, auditLog: { create: async () => { audited = true; } } };
+  const prisma = { maintenanceRecord: { findFirst: async () => old }, vehicle: { findUnique: async () => ({ id: 'vehicle-1', status: 'ACTIVE' }) }, $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx) } as unknown as PrismaService;
+  const result = await new ServiceRecordsService(prisma).updateMaintenance('vehicle-1', 'maintenance-1', { description: 'Плановое обслуживание' });
+  assert.equal(result.description, 'Плановое обслуживание'); assert.equal('isErroneous' in result, false); assert.equal(audited, true);
+});
+
+test('cannot mark maintenance or its schedule erroneous through generic routes', async () => {
+  const prisma = {
+    maintenanceRecord: { findFirst: async () => ({ id: 'maintenance-1', vehicleId: 'vehicle-1', isErroneous: false }) },
+    maintenanceSchedule: { findFirst: async () => ({ id: 'schedule-1', vehicleId: 'vehicle-1', isErroneous: false }) },
+  } as unknown as PrismaService;
+  const service = new ServiceRecordsService(prisma);
+  await assert.rejects(() => service.markExistingErroneous('maintenance', 'vehicle-1', 'maintenance-1', { reason: 'Отключено' }), BadRequestException);
+  await assert.rejects(() => service.markExistingErroneous('schedule', 'vehicle-1', 'schedule-1', { reason: 'Отключено' }), BadRequestException);
 });
 
 test('requires either a date or mileage for the next maintenance schedule', async () => {
@@ -147,10 +175,10 @@ test('requires either a date or mileage for the next maintenance schedule', asyn
 test('emits and prioritizes overdue and approaching OSAGO/maintenance warnings', async () => {
   const vehicle = { id: 'vehicle-1', brand: 'BMW', model: 'X7', licensePlate: 'A001AA', currentMileage: 19_500 };
   const inDays = (days: number) => new Date(Date.now() + days * 86_400_000);
-  let osagoWhere: Record<string, unknown> | undefined;
+  let osagoWhere: Record<string, unknown> | undefined; let scheduleWhere: Record<string, unknown> | undefined;
   const prisma = {
     vehicleDocument: { findMany: async (args: { where: Record<string, unknown> }) => { osagoWhere = args.where; return [{ id: 'policy', validUntil: inDays(14), isErroneous: true, vehicle }]; } },
-    maintenanceSchedule: { findMany: async () => [{ id: 'schedule', dueAt: null, dueMileage: 19_000, mileageWarningThreshold: 1000, vehicle }] },
+    maintenanceSchedule: { findMany: async (args: { where: Record<string, unknown> }) => { scheduleWhere = args.where; return [{ id: 'schedule', dueAt: null, dueMileage: 19_000, mileageWarningThreshold: 1000, isErroneous: true, vehicle }]; } },
     vehicleBattery: { findMany: async () => [] }, detailingRecord: { findMany: async () => [] },
   } as unknown as PrismaService;
   const result = await new ServiceRecordsService(prisma).warnings();
@@ -159,4 +187,5 @@ test('emits and prioritizes overdue and approaching OSAGO/maintenance warnings',
   assert.equal(result[0].kind, 'MAINTENANCE');
   assert.equal(result[1].kind, 'OSAGO');
   assert.equal('isErroneous' in (osagoWhere ?? {}), false);
+  assert.equal('isErroneous' in (scheduleWhere ?? {}), false);
 });
